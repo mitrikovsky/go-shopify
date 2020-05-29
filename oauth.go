@@ -33,11 +33,26 @@ func (app App) AuthorizeUrl(shopName string, state string) string {
 	return shopUrl.String()
 }
 
-func (app App) GetAccessToken(shopName string, code string) (string, error) {
-	type Token struct {
-		Token string `json:"access_token"`
-	}
+type TokenUser struct {
+	Id            int    `json:"id"`
+	FirstName     string `json:"first_name"`
+	LastName      string `json:"last_name"`
+	Email         string `json:"email"`
+	EmailVerified bool   `json:"email_verified"`
+	AccountOwner  bool   `json:"account_owner"`
+	Locale        string `json:"locale"`
+	Collaborator  bool   `json:"collaborator"`
+}
 
+type Token struct {
+	Token               string    `json:"access_token"`
+	Scope               string    `json:"scope"`
+	ExpiresIn           int       `json:"expires_in"`
+	AssociatedUserScope string    `json:"associated_user_scope"`
+	AssociatedUser      TokenUser `json:"associated_user"`
+}
+
+func (app App) GetAccessToken(shopName string, code string) (Token, error) {
 	data := struct {
 		ClientId     string `json:"client_id"`
 		ClientSecret string `json:"client_secret"`
@@ -55,12 +70,12 @@ func (app App) GetAccessToken(shopName string, code string) (string, error) {
 
 	req, err := client.NewRequest("POST", accessTokenRelPath, data, nil)
 	if err != nil {
-		return "", err
+		return Token{}, err
 	}
 
 	token := new(Token)
 	err = client.Do(req, token)
-	return token.Token, err
+	return *token, err
 }
 
 // Verify a message against a message HMAC
